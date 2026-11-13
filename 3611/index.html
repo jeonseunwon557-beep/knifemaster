@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>안심 급식알리미 - 나이스 학교급식 & 알레르기 안심 체크</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+</head>
+<body>
+  <div class="container">
+    <!-- 헤더 -->
+    <header class="app-header">
+      <div class="header-content">
+        <div class="brand-badge">NEIS OPEN API 연동</div>
+        <h1 class="app-title">🍽️ 안심 급식알리미</h1>
+        <p class="app-desc">전국 학교 급식 식단을 확인하고, 내 알레르기 성분이 들어간 메뉴를 실시간으로 안전하게 확인하세요.</p>
+      </div>
+    </header>
+
+    <!-- 학교 선택 및 날짜 컨트롤러 -->
+    <section class="card school-search-card">
+      <div class="school-active-bar">
+        <div class="school-info-group">
+          <span class="school-name-badge">
+            🏫 <span id="currentSchoolName">한국조리과학고등학교</span>
+          </span>
+          <span class="school-meta-tag" id="currentSchoolOffice">경기도교육청</span>
+          <span class="school-meta-tag" id="currentSchoolKind">특성화고</span>
+        </div>
+        <button type="button" class="btn btn-secondary btn-sm" id="btnOpenSearchModal">
+          🔍 다른 학교 찾기
+        </button>
+      </div>
+
+      <!-- 최근 검색 학교 칩 -->
+      <div class="recent-chips-container" id="recentSchoolChips" style="display: none;"></div>
+
+      <!-- 날짜 및 뷰 모드 조작 바 -->
+      <div class="date-view-controller">
+        <div class="date-nav-group">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnPrevDay">◀ 어제</button>
+          <input type="date" id="datePicker" class="input-date">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnNextDay">내일 ▶</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btnToday">오늘</button>
+        </div>
+
+        <div class="view-mode-toggle">
+          <button type="button" class="toggle-btn active" id="btnViewDaily">일일 식단</button>
+          <button type="button" class="toggle-btn" id="btnViewWeekly">주간 식단</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 알레르기 선택 섹션 -->
+    <section class="card allergy-section">
+      <div class="allergy-header-row">
+        <div>
+          <h2 class="card-title">
+            ⚠️ 알레르기 안심 필터
+            <span class="selected-count-badge" id="selectedAllergyCountBadge" style="display: none;">0개 선택됨</span>
+          </h2>
+          <div class="card-subtitle">체크박스를 선택하시면 식단에서 해당 성분이 들어간 메뉴가 <strong>빨간색으로 강하게 강조</strong>됩니다.</div>
+        </div>
+        <div class="allergy-tools">
+          <button type="button" class="btn btn-secondary btn-sm" id="btnPresetCommon">⭐ 주요 알레르기</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnSelectAllAllergy">전체 선택</button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btnClearAllergy">선택 초기화</button>
+        </div>
+      </div>
+
+      <!-- 19종 알레르기 체크박스 그리드 -->
+      <div class="allergy-grid" id="allergyGrid"></div>
+
+      <div class="allergy-notice-text">
+        ℹ️ 교육부 및 식약처 지정 19종 알레르기 유발물질 기준입니다. (메뉴명 끝의 표기 번호와 자동 매칭됩니다)
+      </div>
+    </section>
+
+    <!-- 선택 알레르기 성분 검출 경고 배너 -->
+    <section class="allergy-alert-banner" id="allergyAlertBanner">
+      <div class="alert-banner-icon">🚨</div>
+      <div>
+        <div class="alert-banner-title">
+          주의! 선택하신 알레르기 성분이 포함된 메뉴가 <span id="alertBannerCount">0개</span> 있습니다.
+        </div>
+        <div class="alert-banner-desc">
+          검출된 알레르기: <strong id="alertBannerIngredients">-</strong> (섭취 전 반드시 확인하세요!)
+        </div>
+      </div>
+    </section>
+
+    <!-- 일일 식단 뷰 -->
+    <main id="dailyViewSection"></main>
+
+    <!-- 주간 식단 뷰 -->
+    <section id="weeklyViewSection" style="display: none;"></section>
+
+    <!-- 푸터 -->
+    <footer style="text-align: center; margin-top: 40px; color: #94a3b8; font-size: 0.85rem;">
+      <p>데이터 제공: 교육부 교육행정정보시스템(NEIS) 학교급식식단정보 Open API</p>
+      <p style="margin-top: 4px;">안심 급식알리미 © 2026</p>
+    </footer>
+  </div>
+
+  <!-- 학교 검색 모달 -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">학교 검색</h3>
+        <button type="button" class="modal-close-btn" id="btnSearchModalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="search-input-group">
+          <input type="text" id="inputSearchQuery" class="input-text" placeholder="학교명을 입력하세요 (예: 서울고, 반포중, 대치초)">
+          <button type="button" class="btn btn-primary" id="btnSearchSchool">검색</button>
+        </div>
+        <div id="schoolSearchResults"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 스크립트 로드 -->
+  <script src="js/allergy-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
